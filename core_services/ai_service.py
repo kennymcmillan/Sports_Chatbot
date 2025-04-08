@@ -17,6 +17,7 @@ from functools import lru_cache
 
 from pydantic import BaseModel, Field
 from julius_api import Julius
+from .data_service import DataService
 
 # Configure logging
 logging.basicConfig(

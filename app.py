@@ -47,7 +47,18 @@ st.set_page_config(
 
 # Service initialization functions with error handling
 def get_data_service():
-    """Get or initialize data service."""
+    """
+    Initialize or retrieve the DataService from the session state.
+    
+    The DataService handles:
+    - File uploads (CSV, Excel, Parquet, etc.)
+    - Data preprocessing and validation
+    - Basic data analysis functions
+    
+    Returns:
+        DataService: The initialized data service instance
+        None: If initialization fails
+    """
     if 'data_service' not in st.session_state:
         try:
             st.session_state['data_service'] = DataService()
@@ -57,7 +68,18 @@ def get_data_service():
     return st.session_state['data_service']
 
 def get_database_service():
-    """Get or initialize database service."""
+    """
+    Initialize or retrieve the DatabaseService from the session state.
+    
+    The DatabaseService handles:
+    - Database connections (MySQL, PostgreSQL, SQLite)
+    - Query execution and validation
+    - Schema management and exploration
+    
+    Returns:
+        DatabaseService: The initialized database service instance
+        None: If initialization fails
+    """
     if 'database_service' not in st.session_state:
         try:
             database_service = DatabaseService()
@@ -74,7 +96,19 @@ def get_database_service():
 
 # Removed get_julius_client function as AIService handles the client internally
 def get_ai_service():
-    """Get or initialize AI service."""
+    """
+    Initialize or retrieve the AIService from the session state.
+    
+    The AIService handles:
+    - Integration with Julius AI
+    - Natural language processing
+    - Query generation and analysis
+    - Data visualization suggestions
+    
+    Returns:
+        AIService: The initialized AI service instance
+        None: If initialization fails or API key is missing
+    """
     if 'ai_service' not in st.session_state:
         api_key = os.getenv("JULIUS_API_TOKEN")
         if not api_key:
@@ -88,7 +122,18 @@ def get_ai_service():
     return st.session_state['ai_service']
 
 def get_export_service():
-    """Get or initialize export service."""
+    """
+    Initialize or retrieve the ExportService from the session state.
+    
+    The ExportService handles:
+    - Data export to various formats
+    - Report generation
+    - Visualization export
+    
+    Returns:
+        ExportService: The initialized export service instance
+        None: If initialization fails
+    """
     if 'export_service' not in st.session_state:
         try:
             st.session_state['export_service'] = ExportService()
@@ -98,7 +143,18 @@ def get_export_service():
     return st.session_state['export_service']
 
 def init_session_state():
-    """Initialize session state variables."""
+    """
+    Initialize all required session state variables.
+    
+    Sets up default values for:
+    - Data source selection
+    - Dataset loading status
+    - Database connection status
+    - Current analysis mode
+    - History tracking (analysis and chat)
+    - Database reasoning settings
+    - UI state preferences
+    """
     if 'data_source' not in st.session_state:
         st.session_state.data_source = None  # 'file' or 'database'
     if 'dataset_loaded' not in st.session_state:
@@ -127,15 +183,136 @@ def init_session_state():
     if 'db_reasoning_show_visualizations' not in st.session_state:
         st.session_state.db_reasoning_show_visualizations = False
 
+def set_custom_style():
+    """
+    Set custom styling to match Aspire Academy's brand colors.
+    """
+    st.markdown("""
+        <style>
+        /* Main background and text colors */
+        .stApp {
+            background-color: #FFFFFF;
+        }
+        
+        /* Sidebar styling */
+        [data-testid="stSidebar"] {
+            background-color: #1B365D;
+            color: #FFFFFF;
+        }
+        
+        [data-testid="stSidebar"] .stMarkdown {
+            color: #FFFFFF;
+        }
+        
+        /* Headers */
+        h1, h2, h3 {
+            color: #1B365D;
+        }
+        
+        /* Buttons */
+        .stButton button {
+            background-color: #00A3E0;
+            color: #FFFFFF;
+            border: none;
+        }
+        
+        .stButton button:hover {
+            background-color: #1B365D;
+            color: #FFFFFF;
+        }
+        
+        /* Radio buttons and checkboxes */
+        .stRadio label, .stCheckbox label {
+            color: #1B365D;
+        }
+        
+        /* Success messages */
+        .element-container .stAlert.success {
+            background-color: #00A3E0;
+            color: #FFFFFF;
+        }
+        
+        /* Info messages */
+        .element-container .stAlert.info {
+            background-color: #F5F5F5;
+            border-left-color: #00A3E0;
+        }
+        
+        /* Metrics */
+        [data-testid="stMetricValue"] {
+            color: #1B365D;
+        }
+        
+        /* DataFrames */
+        .stDataFrame {
+            border: 1px solid #1B365D;
+        }
+        
+        /* Tabs */
+        .stTabs [data-baseweb="tab-list"] button[data-baseweb="tab"] {
+            color: #1B365D;
+        }
+        
+        .stTabs [data-baseweb="tab-list"] button[data-baseweb="tab"]:hover {
+            color: #00A3E0;
+        }
+        
+        /* Selectbox */
+        .stSelectbox label {
+            color: #1B365D;
+        }
+        
+        /* Links */
+        a {
+            color: #00A3E0;
+        }
+        
+        a:hover {
+            color: #1B365D;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
 def main():
-    """Main application function."""
-    # Sidebar title
-    with st.sidebar:
-        st.title("Aspire Academy Sports ChatBot")
-        st.markdown("---")
+    """
+    Main application entry point.
     
-    # Main content title
-    #st.title("Sports Analytics ChatBot")
+    Flow:
+    1. Initialize sidebar and services
+    2. Handle data source selection (file/database)
+    3. Manage database connections if needed
+    4. Present analysis mode selection
+    5. Render appropriate UI components based on mode
+    
+    The application follows a modular structure where each mode
+    (Data Explorer, Query Builder, Database Reasoning) has its own
+    UI components and functionality while sharing core services.
+    """
+    # Apply custom styling
+    set_custom_style()
+    
+    # Update the page config with Aspire Academy colors
+    st.set_page_config(
+        page_title="Aspire Academy Sports Analytics",
+        page_icon="🏆",
+        layout="wide",
+        initial_sidebar_state="expanded",
+        menu_items={
+            'About': "Aspire Academy Sports Analytics Platform",
+            'Get Help': 'https://aspire.qa/contact-us',
+            'Report a bug': "https://aspire.qa/contact-us"
+        }
+    )
+    
+    # Add Aspire Academy logo
+    with st.sidebar:
+        st.markdown("""
+            <div style='text-align: center; padding: 1rem;'>
+                <h1 style='color: white;'>Aspire Academy</h1>
+                <h2 style='color: white;'>Sports Analytics</h2>
+            </div>
+            <hr style='margin: 1rem 0;'>
+        """, unsafe_allow_html=True)
     
     # Initialize session state
     init_session_state()
