@@ -12,12 +12,25 @@ The application uses a service-based architecture with:
 """
 
 import os
-import streamlit as st
-from dotenv import load_dotenv
 import sys
 import time
 import pandas as pd
 from datetime import datetime
+import streamlit as st
+from dotenv import load_dotenv
+
+# IMPORTANT: This must be the first Streamlit command
+st.set_page_config(
+    page_title="Aspire Academy Sports Analytics",
+    page_icon="🏆",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items={
+        'About': "Aspire Academy Sports Analytics Platform",
+        'Get Help': 'https://aspire.qa/contact-us',
+        'Report a bug': "https://aspire.qa/contact-us"
+    }
+)
 
 # Load environment variables
 load_dotenv()
@@ -28,160 +41,12 @@ from core_services.database_service import DatabaseService
 from core_services.ai_service import AIService, AIRequest
 from core_services.export_service import ExportService
 
-# Removed Julius API client import as it's handled by AIService
-
 # Import UI components
 from ui_components.data_explorer import render_data_explorer_sidebar, render_data_explorer
 from ui_components.query_builder import render_query_builder_sidebar, render_query_builder
 from ui_components.analysis_dashboard import render_analysis_dashboard_sidebar, render_analysis_dashboard
 from ui_components.database_reasoning_ui import render_database_reasoning_ui, render_database_reasoning_sidebar
 from ui_components.database_reasoning_adapter import render_database_reasoning_ui_adapter
-
-# Set page configuration
-st.set_page_config(
-    page_title="Aspire Academy Sports Analytics",
-    page_icon="🏆",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# Service initialization functions with error handling
-def get_data_service():
-    """
-    Initialize or retrieve the DataService from the session state.
-    
-    The DataService handles:
-    - File uploads (CSV, Excel, Parquet, etc.)
-    - Data preprocessing and validation
-    - Basic data analysis functions
-    
-    Returns:
-        DataService: The initialized data service instance
-        None: If initialization fails
-    """
-    if 'data_service' not in st.session_state:
-        try:
-            st.session_state['data_service'] = DataService()
-        except Exception as e:
-            st.error(f"Failed to initialize Data Service: {str(e)}")
-            return None
-    return st.session_state['data_service']
-
-def get_database_service():
-    """
-    Initialize or retrieve the DatabaseService from the session state.
-    
-    The DatabaseService handles:
-    - Database connections (MySQL, PostgreSQL, SQLite)
-    - Query execution and validation
-    - Schema management and exploration
-    
-    Returns:
-        DatabaseService: The initialized database service instance
-        None: If initialization fails
-    """
-    if 'database_service' not in st.session_state:
-        try:
-            database_service = DatabaseService()
-            st.session_state['database_service'] = database_service
-            # Initialize connection state
-            if 'db_connected' not in st.session_state:
-                st.session_state['db_connected'] = False
-            if 'current_connection' not in st.session_state:
-                st.session_state['current_connection'] = None
-        except Exception as e:
-            st.error(f"Failed to initialize Database Service: {str(e)}")
-            return None
-    return st.session_state['database_service']
-
-# Removed get_julius_client function as AIService handles the client internally
-def get_ai_service():
-    """
-    Initialize or retrieve the AIService from the session state.
-    
-    The AIService handles:
-    - Integration with Julius AI
-    - Natural language processing
-    - Query generation and analysis
-    - Data visualization suggestions
-    
-    Returns:
-        AIService: The initialized AI service instance
-        None: If initialization fails or API key is missing
-    """
-    if 'ai_service' not in st.session_state:
-        api_key = os.getenv("JULIUS_API_TOKEN")
-        if not api_key:
-            st.error("Julius API key not found. Please set the JULIUS_API_TOKEN environment variable.")
-            return None
-        try:
-            st.session_state['ai_service'] = AIService(api_key)
-        except Exception as e:
-            st.error(f"Failed to initialize AI Service: {str(e)}")
-            return None
-    return st.session_state['ai_service']
-
-def get_export_service():
-    """
-    Initialize or retrieve the ExportService from the session state.
-    
-    The ExportService handles:
-    - Data export to various formats
-    - Report generation
-    - Visualization export
-    
-    Returns:
-        ExportService: The initialized export service instance
-        None: If initialization fails
-    """
-    if 'export_service' not in st.session_state:
-        try:
-            st.session_state['export_service'] = ExportService()
-        except Exception as e:
-            st.error(f"Failed to initialize Export Service: {str(e)}")
-            return None
-    return st.session_state['export_service']
-
-def init_session_state():
-    """
-    Initialize all required session state variables.
-    
-    Sets up default values for:
-    - Data source selection
-    - Dataset loading status
-    - Database connection status
-    - Current analysis mode
-    - History tracking (analysis and chat)
-    - Database reasoning settings
-    - UI state preferences
-    """
-    if 'data_source' not in st.session_state:
-        st.session_state.data_source = None  # 'file' or 'database'
-    if 'dataset_loaded' not in st.session_state:
-        st.session_state.dataset_loaded = False
-    if 'db_connected' not in st.session_state:
-        st.session_state.db_connected = False
-    if 'current_connection' not in st.session_state:
-        st.session_state.current_connection = None
-    if 'current_mode' not in st.session_state:
-        st.session_state.current_mode = None
-    if 'analysis_history' not in st.session_state:
-        st.session_state.analysis_history = []
-    if 'chat_history' not in st.session_state:
-        st.session_state.chat_history = []
-    if 'selected_table' not in st.session_state:
-        st.session_state.selected_table = None
-    # Database reasoning specific variables
-    if 'db_reasoning_chat_history' not in st.session_state:
-        st.session_state.db_reasoning_chat_history = []
-    if 'db_reasoning_mode' not in st.session_state:
-        st.session_state.db_reasoning_mode = "Simple"  # "Simple" or "Advanced"
-    if 'db_reasoning_show_schema' not in st.session_state:
-        st.session_state.db_reasoning_show_schema = False
-    if 'db_reasoning_show_code' not in st.session_state:
-        st.session_state.db_reasoning_show_code = False
-    if 'db_reasoning_show_visualizations' not in st.session_state:
-        st.session_state.db_reasoning_show_visualizations = False
 
 def set_custom_style():
     """
@@ -273,6 +138,143 @@ def set_custom_style():
         </style>
     """, unsafe_allow_html=True)
 
+# Service initialization functions with error handling
+def get_data_service():
+    """
+    Initialize or retrieve the DataService from the session state.
+    
+    The DataService handles:
+    - File uploads (CSV, Excel, Parquet, etc.)
+    - Data preprocessing and validation
+    - Basic data analysis functions
+    
+    Returns:
+        DataService: The initialized data service instance
+        None: If initialization fails
+    """
+    if 'data_service' not in st.session_state:
+        try:
+            st.session_state['data_service'] = DataService()
+        except Exception as e:
+            st.error(f"Failed to initialize Data Service: {str(e)}")
+            return None
+    return st.session_state['data_service']
+
+def get_database_service():
+    """
+    Initialize or retrieve the DatabaseService from the session state.
+    
+    The DatabaseService handles:
+    - Database connections (MySQL, PostgreSQL, SQLite)
+    - Query execution and validation
+    - Schema management and exploration
+    
+    Returns:
+        DatabaseService: The initialized database service instance
+        None: If initialization fails
+    """
+    if 'database_service' not in st.session_state:
+        try:
+            database_service = DatabaseService()
+            st.session_state['database_service'] = database_service
+            # Initialize connection state
+            if 'db_connected' not in st.session_state:
+                st.session_state['db_connected'] = False
+            if 'current_connection' not in st.session_state:
+                st.session_state['current_connection'] = None
+        except Exception as e:
+            st.error(f"Failed to initialize Database Service: {str(e)}")
+            return None
+    return st.session_state['database_service']
+
+def get_ai_service():
+    """
+    Initialize or retrieve the AIService from the session state.
+    
+    The AIService handles:
+    - Integration with Julius AI
+    - Natural language processing
+    - Query generation and analysis
+    - Data visualization suggestions
+    
+    Returns:
+        AIService: The initialized AI service instance
+        None: If initialization fails or API key is missing
+    """
+    if 'ai_service' not in st.session_state:
+        api_key = os.getenv("JULIUS_API_TOKEN")
+        if not api_key:
+            st.error("Julius API key not found. Please set the JULIUS_API_TOKEN environment variable.")
+            return None
+        try:
+            st.session_state['ai_service'] = AIService(api_key)
+        except Exception as e:
+            st.error(f"Failed to initialize AI Service: {str(e)}")
+            return None
+    return st.session_state['ai_service']
+
+def get_export_service():
+    """
+    Initialize or retrieve the ExportService from the session state.
+    
+    The ExportService handles:
+    - Data export to various formats
+    - Report generation
+    - Visualization export
+    
+    Returns:
+        ExportService: The initialized export service instance
+        None: If initialization fails
+    """
+    if 'export_service' not in st.session_state:
+        try:
+            st.session_state['export_service'] = ExportService()
+        except Exception as e:
+            st.error(f"Failed to initialize Export Service: {str(e)}")
+            return None
+    return st.session_state['export_service']
+
+def init_session_state():
+    """
+    Initialize all required session state variables.
+    
+    Sets up default values for:
+    - Data source selection
+    - Dataset loading status
+    - Database connection status
+    - Current analysis mode
+    - History tracking (analysis and chat)
+    - Database reasoning settings
+    - UI state preferences
+    """
+    if 'data_source' not in st.session_state:
+        st.session_state.data_source = None  # 'file' or 'database'
+    if 'dataset_loaded' not in st.session_state:
+        st.session_state.dataset_loaded = False
+    if 'db_connected' not in st.session_state:
+        st.session_state.db_connected = False
+    if 'current_connection' not in st.session_state:
+        st.session_state.current_connection = None
+    if 'current_mode' not in st.session_state:
+        st.session_state.current_mode = None
+    if 'analysis_history' not in st.session_state:
+        st.session_state.analysis_history = []
+    if 'chat_history' not in st.session_state:
+        st.session_state.chat_history = []
+    if 'selected_table' not in st.session_state:
+        st.session_state.selected_table = None
+    # Database reasoning specific variables
+    if 'db_reasoning_chat_history' not in st.session_state:
+        st.session_state.db_reasoning_chat_history = []
+    if 'db_reasoning_mode' not in st.session_state:
+        st.session_state.db_reasoning_mode = "Simple"  # "Simple" or "Advanced"
+    if 'db_reasoning_show_schema' not in st.session_state:
+        st.session_state.db_reasoning_show_schema = False
+    if 'db_reasoning_show_code' not in st.session_state:
+        st.session_state.db_reasoning_show_code = False
+    if 'db_reasoning_show_visualizations' not in st.session_state:
+        st.session_state.db_reasoning_show_visualizations = False
+
 def main():
     """
     Main application entry point.
@@ -290,29 +292,6 @@ def main():
     """
     # Apply custom styling
     set_custom_style()
-    
-    # Update the page config with Aspire Academy colors
-    st.set_page_config(
-        page_title="Aspire Academy Sports Analytics",
-        page_icon="🏆",
-        layout="wide",
-        initial_sidebar_state="expanded",
-        menu_items={
-            'About': "Aspire Academy Sports Analytics Platform",
-            'Get Help': 'https://aspire.qa/contact-us',
-            'Report a bug': "https://aspire.qa/contact-us"
-        }
-    )
-    
-    # Add Aspire Academy logo
-    with st.sidebar:
-        st.markdown("""
-            <div style='text-align: center; padding: 1rem;'>
-                <h1 style='color: white;'>Aspire Academy</h1>
-                <h2 style='color: white;'>Sports Analytics</h2>
-            </div>
-            <hr style='margin: 1rem 0;'>
-        """, unsafe_allow_html=True)
     
     # Initialize session state
     init_session_state()
